@@ -2,142 +2,179 @@ SHOW WARNINGS LIMIT 15;
 
 DROP TABLE IF EXISTS recurring_pattern;
 DROP TABLE IF EXISTS event_instance_exception;
-DROP TABLE IF EXISTS tour;
+DROP TABLE IF EXISTS atomic_tour;
+DROP TABLE IF EXISTS tour_set;
+DROP TABLE IF EXISTS tour_for_driver;
 DROP TABLE IF EXISTS driver;
 DROP TABLE IF EXISTS car;
 DROP TABLE IF EXISTS address;
 DROP TABLE IF EXISTS customer;
 DROP TABLE IF EXISTS recurring_type;
-DROP TABLE IF EXISTS tour_type;
 DROP TABLE IF EXISTS location_type;
 DROP TABLE IF EXISTS car_type;
+DROP TABLE IF EXISTS accessibility_type;
 
 
 CREATE TABLE recurring_type (
-	id INT,
-	recurring_type VARCHAR(20) NOT NULL,
-	PRIMARY KEY (id)
+	id INT PRIMARY KEY,
+	recurring_type VARCHAR(20) NOT NULL
 );
 
-CREATE TABLE tour_type (
-	id INT,
-	type_name VARCHAR(20),
-	type_description VARCHAR(500),
-	PRIMARY KEY (id)
+CREATE TABLE accessibility_type (
+	id INT PRIMARY KEY,
+	type_name VARCHAR(20), -- stufenlos, 1-2 Stufen, weniger als eine Etage, mehr als eine Etage
+	type_description VARCHAR(500)
 );
 
 CREATE TABLE location_type(
-	id INT NOT NULL,
+	id INT NOT NULL PRIMARY KEY,
 	location_type_name VARCHAR(50),
-	location_type_description VARCHAR(500),
-	PRIMARY KEY (id)
+	location_type_description VARCHAR(500)
 );
 
 CREATE TABLE car_type (
-	id INT NOT NULL,
+	id INT PRIMARY KEY,
 	car_type_name VARCHAR(50),
 	car_type_name_short VARCHAR(5),
-	car_type_description VARCHAR(500),
-	PRIMARY KEY (id)
+	car_type_description VARCHAR(500)
 );
 
 -- unused
 CREATE TABLE driver (
-	id INT NOT NULL,
+	id INT PRIMARY KEY,
 	first_name VARCHAR(50),
-	last_name VARCHAR(50),
-	PRIMARY KEY (id)
+	last_name VARCHAR(50)
 );
 
 -- unused
 CREATE TABLE car (
-	id INT NOT NULL,
+	id INT PRIMARY KEY,
 	license_plate VARCHAR(10) NOT NULL,
 	car_type_id INT NOT NULL,
 	customer_seats INT NOT NULL,
 	has_wheelchair BOOL NOT NULL,
 	is_wheelchair_friendly BOOL NOT NULL,
 	has_carrying_seat BOOL NOT NULL,
-	PRIMARY KEY (id),
 	FOREIGN KEY (car_type_id) REFERENCES car_type(id)
 );
 
-CREATE TABLE tour (
-	id INT NOT NULL,
-	parent_event_id INT,
-	type_of_tour INT,
-	passenger_id INT NOT NULL,
+CREATE TABLE tour_for_driver (
+	id INT PRIMARY KEY,
 	driver_id INT NOT NULL,
+	car_id INT NOT NULL,
 	
-	-- SPECIAL CAR/EQUIPMENT REQUIREMENTS
-	wheelchair_needed CHAR(1), -- still able to sit in normal car seat
-	wheelchair_space_needed CHAR(1),
-	carrying_chair_needed CHAR(1),
-	
-	-- TIME AND LOCATION
-	start_date DATE NOT NULL,
-	end_date DATE,
-	start_time TIMESTAMP,
-	appointment_time TIMESTAMP,
-	end_time TIMESTAMP,
-	start_location VARCHAR(50) NOT NULL,
-	appointment_location VARCHAR(50),
-	end_location VARCHAR(50) NOT NULL,
-	is_recurring CHAR(1) NOT NULL,
-	
-	-- LOGGING
-	created_by VARCHAR(10) NOT NULL,
-	created_date DATE NOT NULL,
-	call_for_retrieval_time TIMESTAMP,
-	appointment_made_by VARCHAR(50),
-		
-	-- KEYs
-	PRIMARY KEY (id),
-	FOREIGN KEY (parent_event_id) REFERENCES tour(id),
-	FOREIGN KEY (type_of_tour) REFERENCES tour_type(id),
-	FOREIGN KEY (driver_id) REFERENCES driver(id)
+	FOREIGN KEY (driver_id) REFERENCES driver(id),
+	FOREIGN KEY (car_id) REFERENCES car(id)
 );
-
 
 -- unfinished
 CREATE TABLE customer (
-	id INT NOT NULL,
+	id INT PRIMARY KEY,
 	first_name INT NOT NULL,
 	last_name INT NOT NULL,
-	PRIMARY KEY (id)
+	STATUS_id INT NOT NULL -- todo:FOREIGN  key fehlt noch
 );
 
 -- unfinished
 CREATE TABLE address (
-	id INT NOT NULL,
+	id INT PRIMARY KEY,
+	accessibility_id INT,
 	street VARCHAR(50),
+	label VARCHAR (50),
+	location_detail VARCHAR(50), -- Etage, 'Wohnung rechts', ...
+	location_comment VARCHAR(50), -- 'bissiger Hund'
 	house_number VARCHAR(10),
 	postal_code INT,
 	city VARCHAR(50),
 	location_type INT,
-	PRIMARY KEY (id),
-	FOREIGN KEY (location_type) REFERENCES location_type(id)
+	FOREIGN KEY (location_type) REFERENCES location_type(id),
+	FOREIGN KEY (accessibility_id) REFERENCES accessibility_type(id)
 );
 
-
-CREATE TABLE event_instance_exception (
-	id INT NOT NULL,
-	event_id INT NOT NULL,
-	is_rescheduled CHAR(1) NOT NULL,
-	id_cancelled CHAR(1) NOT NULL,
-	start_date DATE NOT NULL,
-	end_date DATE,
-	start_time TIMESTAMP,
-	end_time TIMESTAMP,
-	is_full_day_event CHAR(1),
+CREATE TABLE tour_set (
+	id INT PRIMARY KEY,
+	payed_car_type INT, -- KK: Mietwagen, Mietwagen mit Rollstuhl (BTW), Mietwagen mit Tragestuhl (TSW) 
+	passenger_id INT NOT NULL,
+	
+	-- LOGGING
 	created_by VARCHAR(10) NOT NULL,
 	created_date DATE NOT NULL,
-	PRIMARY KEY (id),
-	FOREIGN KEY (event_id) REFERENCES tour(id)
+	
+	-- KEYs
+	FOREIGN KEY (payed_car_type) REFERENCES car_type(id),
+	FOREIGN KEY (passenger_id) REFERENCES customer(id)
+);
+
+CREATE TABLE atomic_tour (
+	id INT PRIMARY KEY,
+	tour_set_id INT NOT NULL,
+	details VARCHAR(50),
+	
+	-- SPECIAL CAR/EQUIPMENT REQUIREMENTS
+	wheelchair_needed BOOL, -- still able to sit in normal car seat
+	wheelchair_space_needed BOOL,
+	carrying_chair_needed BOOL,
+	
+	-- TIME AND LOCATION
+	start_date DATE NOT NULL,
+	end_date DATE,
+	is_recurring BOOL NOT NULL,
+	start_time TIMESTAMP,
+	end_time TIMESTAMP,
+	start_location INT,
+	end_location INT,
+
+	-- LOGGING
+	call_for_retrieval_time TIMESTAMP,
+	appointment_made_by VARCHAR(50),
+		
+	-- KEYs
+	FOREIGN KEY (tour_set_id) REFERENCES tour_set(id),
+	FOREIGN KEY (start_location) REFERENCES address(id),
+	FOREIGN KEY (end_location) REFERENCES address(id)
+);
+
+CREATE TABLE event_instance_exception (
+	id INT PRIMARY KEY,
+	atomic_tour_id INT NOT NULL,
+	
+	-- EXCEPTION FLAG
+	is_rescheduled BOOL NOT NULL,
+	is_cancelled BOOL NOT NULL,
+	car_requirements_changed BOOL NOT NULL,
+	location_changed BOOL NOT NULL,
+	
+	
+	tour_set_id INT NOT NULL,
+	driver_id INT,
+	
+	-- SPECIAL CAR/EQUIPMENT REQUIREMENTS
+	wheelchair_needed BOOL, -- still able to sit in normal car seat
+	wheelchair_space_needed BOOL,
+	carrying_chair_needed BOOL,
+	
+	-- TIME AND LOCATION
+	start_date DATE NOT NULL,
+	end_date DATE,
+	is_recurring BOOL NOT NULL,
+	start_time TIMESTAMP,
+	end_time TIMESTAMP,
+	start_location INT,
+	end_location INT,
+
+	-- LOGGING
+	call_for_retrieval_time TIMESTAMP,
+	appointment_made_by VARCHAR(50),
+		
+	-- KEYs
+	FOREIGN KEY (driver_id) REFERENCES driver(id),
+	FOREIGN KEY (tour_set_id) REFERENCES tour_set(id),
+	FOREIGN KEY (start_location) REFERENCES address(id),
+	FOREIGN KEY (end_location) REFERENCES address(id)
 );
 
 CREATE TABLE recurring_pattern (
-	event_id INT,
+	tour_set_id INT PRIMARY KEY,
 	recurring_type_id INT NOT NULL,
 	separation_count INT DEFAULT NULL,
 	max_num_of_occurrences INT DEFAULT NULL,
@@ -145,7 +182,6 @@ CREATE TABLE recurring_pattern (
 	week_of_month INT DEFAULT NULL,
 	day_of_month INT DEFAULT NULL,
 	month_of_year INT DEFAULT NULL,
-	PRIMARY KEY (event_id),
-	FOREIGN KEY (event_id) REFERENCES tour(id),
+	FOREIGN KEY (tour_set_id) REFERENCES tour_set(id),
 	FOREIGN KEY (recurring_type_id) REFERENCES recurring_type(id)
 );
