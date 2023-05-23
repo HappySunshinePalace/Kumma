@@ -175,13 +175,24 @@ CREATE TABLE event_instance_exception (
 
 CREATE TABLE recurring_pattern (
 	tour_set_id INT PRIMARY KEY,
+	
+	-- repetition details
 	recurring_type_id INT NOT NULL,
-	separation_count INT DEFAULT NULL,
+	separation_count INT DEFAULT NULL,   -- eg. 1, if only every two weeks instead of every week
 	max_num_of_occurrences INT DEFAULT NULL,
+	
+	-- base date for repetition
 	day_of_week INT DEFAULT NULL,
 	week_of_month INT DEFAULT NULL,
-	day_of_month INT DEFAULT NULL,
 	month_of_year INT DEFAULT NULL,
+	monday BOOL DEFAULT NULL,
+	tuesday BOOL DEFAULT NULL,
+	wednesday BOOL DEFAULT NULL,
+	thursday BOOL DEFAULT NULL,
+	friday BOOL DEFAULT NULL,
+	saturday BOOL DEFAULT NULL,
+	sunday BOOL DEFAULT NULL,
+	
 	FOREIGN KEY (tour_set_id) REFERENCES tour_set(id),
 	FOREIGN KEY (recurring_type_id) REFERENCES recurring_type(id)
 );
