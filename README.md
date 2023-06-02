@@ -23,9 +23,10 @@ Milestones:
 
 ### Built With
 
-* [![MySQL][mysql.com]][MySQL-url]
-* [![Java][java.com]][Java-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
+* ![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
+* ![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
+* ![Angular](https://img.shields.io/badge/angular-%23DD0031.svg?style=for-the-badge&logo=angular&logoColor=white)
+* ![SASS](https://img.shields.io/badge/SASS-hotpink.svg?style=for-the-badge&logo=SASS&logoColor=white)
+* ![Bootstrap](https://img.shields.io/badge/bootstrap-%238511FA.svg?style=for-the-badge&logo=bootstrap&logoColor=white)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
