@@ -1,0 +1,7 @@
+package proj.kumma.tourmanagement.model;
+
+public class Driver implements Serializable {
+    private Long id;
+    private String firstName;
+    private String lastName;
+}
